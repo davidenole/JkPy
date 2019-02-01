@@ -1,18 +1,24 @@
 from matplotlib import pyplot as plt
 import h5py
 from math import log, sqrt
-from numpy import mean, std, polyfit
+import numpy as np
 from os import listdir
 from os.path import isfile, join
 
+# converts number to string of length min(4,n_figures)
 def mstr(n):
     s = str(n)
-    return '0'*(4-len(s))+s
+    if len(s)<4:
+        return '0'*(4-len(s))+s
+    else:
+        return s
 
+# calculates the mean of a list of elements at position i
 def listmean(L,i):
     l = [ el[i] for el in L ]
     return mean(l)
 
+# calculates the std of a list of elements at position i
 def liststd(L,i):
     l = [ el[i] for el in L ]
     return std(l)
@@ -46,6 +52,14 @@ def constantFit(Y,S):
     x = [ w[i]*Y[i] for i in range(len(Y)) ]
     return sum(x)/sum(w) , (sum(w))**(-.5)
     
+# read propagators from tmlqcd-like file
+def readPropsTMLQCD(filename,T):
+    t = T+2
+    read = np.fromfile(filename, sep='  ').reshape( t//2*3, 5)[:,3:]
+    PP = np.concatenate((read[:t,0],read[1:t-1,0][::-1]))
+    PA = np.concatenate((read[t:2*t,0],read[t+1:2*t-1,1][::-1]))*(-1)
+    PV = np.concatenate((read[2*t:3*t,0],read[2*t+1:3*t-1,1][::-1]))
+    return PP, PA, PV
 
 L = 48
 T = 96
@@ -90,7 +104,8 @@ for m in masslist:
             tPAu[i] = -float(el2.split('  ')[-2])
             if i not in [0,T//2]:
                 tPAu[T-i] = -float(el2.split('  ')[-1])
-        
+
+        f.close()
         Ps.append(tPu)
         PAs.append(tPAu)
 
